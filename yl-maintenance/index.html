@@ -1,0 +1,1369 @@
+
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบติดตามงานติดตั้งและซ่อมบำรุง</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .bg-pastel-blue {
+            background-color: #b3d8ff;
+        }
+        
+        .bg-cream {
+            background-color: #fff9e6;
+        }
+        
+        .bg-light-orange {
+            background-color: #ffe0cc;
+        }
+        
+        .text-pastel-blue {
+            color: #4a86e8;
+        }
+        
+        .border-pastel-blue {
+            border-color: #b3d8ff;
+        }
+        
+        .status-assigned {
+            background-color: #fff2cc;
+            color: #856404;
+        }
+        
+        .status-inprogress {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .nav-item {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #4a86e8;
+        }
+        
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;
+            z-index: 10;
+        }
+        
+        .table-container {
+            max-height: 60vh;
+            overflow-y: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+        
+        .settings-icon {
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .settings-icon:hover {
+            transform: rotate(90deg);
+        }
+        
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-cream">
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-pastel-blue shadow-md">
+            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                <div class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-700 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <h1 class="text-xl font-semibold text-blue-800">ระบบติดตามงานติดตั้งและซ่อมบำรุง</h1>
+                    <span class="ml-2 text-sm text-blue-600">(Maintenance Tracking System)</span>
+                </div>
+                <div class="flex items-center">
+                    <div id="lastUpdated" class="text-sm text-blue-700 mr-4"></div>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-700 settings-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="settingsIcon">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="bg-white shadow-sm">
+            <div class="container mx-auto px-4">
+                <div class="flex space-x-8">
+                    <div class="nav-item active py-4 px-2 text-blue-700 font-medium" data-page="dashboard">หน้าแดชบอร์ด</div>
+                    <div class="nav-item py-4 px-2 text-gray-500 font-medium" data-page="tasks">รายการมอบหมายงาน</div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-grow container mx-auto px-4 py-6">
+            <!-- Dashboard Page -->
+            <div id="dashboardPage" class="animate-fadeIn">
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800">ภาพรวมงานทั้งหมด</h2>
+                        <div class="flex space-x-2">
+                            <button id="refreshDashboard" class="bg-pastel-blue hover:bg-blue-400 text-blue-800 px-4 py-2 rounded-lg flex items-center shadow-sm btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                อัพเดตข้อมูล
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Filters -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">กรองตามวันที่รับแจ้ง</label>
+                                <input type="date" id="dateFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">กรองตามเรื่องที่รับแจ้ง</label>
+                                <select id="topicFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                    <option value="">ทั้งหมด</option>
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <button id="clearFilters" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg flex items-center shadow-sm btn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    ล้างตัวกรอง
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <h3 class="text-lg font-medium text-gray-700 mb-4">สรุปเรื่องที่รับแจ้ง</h3>
+                            <div class="chart-container">
+                                <canvas id="topicChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <h3 class="text-lg font-medium text-gray-700 mb-4">สรุปงานตามผู้รับผิดชอบ</h3>
+                            <div class="chart-container">
+                                <canvas id="responsibleChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table -->
+                    <div class="bg-white rounded-lg shadow-sm">
+                        <div class="p-4 border-b">
+                            <h3 class="text-lg font-medium text-gray-700">รายการงานทั้งหมด</h3>
+                        </div>
+                        <div class="table-container">
+                            <table class="min-w-full">
+                                <thead>
+                                    <tr class="bg-gray-50">
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่รับแจ้ง</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เรื่องที่รับแจ้ง</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานที่</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รายละเอียด</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ผู้รับผิดชอบ</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ผลการปฏิบัติงาน</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่ดำเนินการซ่อม</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หมายเหตุ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboardTableBody">
+                                    <!-- Data will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tasks Page -->
+            <div id="tasksPage" class="hidden animate-fadeIn">
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800">รายการมอบหมายงาน</h2>
+                        <div class="flex space-x-2">
+                            <button id="refreshTasks" class="bg-pastel-blue hover:bg-blue-400 text-blue-800 px-4 py-2 rounded-lg flex items-center shadow-sm btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                อัพเดตข้อมูล
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Task Tabs -->
+                    <div class="bg-white rounded-lg shadow-sm mb-6">
+                        <div class="border-b">
+                            <div class="flex">
+                                <button class="task-tab active px-6 py-3 text-blue-700 font-medium border-b-2 border-blue-500" data-tab="active">งานที่กำลังดำเนินการ</button>
+                                <button class="task-tab px-6 py-3 text-gray-500 font-medium" data-tab="completed">งานที่เสร็จสิ้นแล้ว</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Active Tasks -->
+                        <div id="activeTasksTab" class="animate-fadeIn">
+                            <div class="table-container">
+                                <table class="min-w-full">
+                                    <thead>
+                                        <tr class="bg-gray-50">
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่รับแจ้ง</th>
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เรื่องที่รับแจ้ง</th>
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานที่</th>
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เบอร์โทรศัพท์</th>
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รายละเอียด</th>
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ผู้รับผิดชอบ</th>
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">การดำเนินการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="activeTasksTableBody">
+                                        <!-- Data will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Completed Tasks -->
+                        <div id="completedTasksTab" class="hidden animate-fadeIn">
+                            <div class="table-container">
+                                <table class="min-w-full">
+                                    <thead>
+                                        <tr class="bg-gray-50">
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่รับแจ้ง</th>
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เรื่องที่รับแจ้ง</th>
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานที่</th>
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เบอร์โทรศัพท์</th>
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รายละเอียด</th>
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ผู้รับผิดชอบ</th>
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ผลการปฏิบัติงาน</th>
+                                            <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่ดำเนินการซ่อม</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="completedTasksTableBody">
+                                        <!-- Data will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-pastel-blue py-4">
+            <div class="container mx-auto px-4 text-center text-blue-800 text-sm">
+                &copy; 2024 ระบบติดตามงานติดตั้งและซ่อมบำรุง | Maintenance Tracking System
+            </div>
+        </footer>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-fadeIn">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">ตั้งค่าระบบ</h3>
+                    <button id="closeSettingsModal" class="text-gray-400 hover:text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">รหัสผ่าน</label>
+                    <input type="password" id="settingsPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="กรุณาใส่รหัสผ่าน">
+                </div>
+                
+                <div id="settingsContent" class="hidden">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Google Sheet ID</label>
+                        <input type="text" id="sheetId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="ใส่ Sheet ID">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อหน้า Sheet</label>
+                        <input type="text" id="sheetName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="ใส่ชื่อหน้า Sheet">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">App Script URL</label>
+                        <input type="text" id="scriptUrl" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="ใส่ URL ของ App Script">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">เวลาอัพเดตอัตโนมัติ (นาที)</label>
+                        <input type="number" id="updateInterval" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" min="1" placeholder="ใส่เวลาเป็นนาที">
+                    </div>
+                </div>
+                
+                <div class="flex justify-end mt-6">
+                    <button id="verifyPassword" class="bg-pastel-blue hover:bg-blue-400 text-blue-800 px-4 py-2 rounded-lg shadow-sm btn">ตรวจสอบรหัสผ่าน</button>
+                    <button id="saveSettings" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-sm btn ml-2 hidden">บันทึกการตั้งค่า</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Action Modal -->
+    <div id="taskActionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-fadeIn">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="taskActionTitle" class="text-lg font-medium text-gray-900">ดำเนินการงาน</h3>
+                    <button id="closeTaskActionModal" class="text-gray-400 hover:text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div id="taskDetails" class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <!-- Task details will be populated here -->
+                </div>
+                
+                <div id="completeTaskForm" class="hidden">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ผลการปฏิบัติงาน/สาเหตุ <span class="text-red-500">*</span></label>
+                        <textarea id="taskResult" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" rows="3" placeholder="กรุณาระบุผลการปฏิบัติงานหรือสาเหตุ"></textarea>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end mt-6">
+                    <button id="acceptTaskBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-sm btn hidden">รับงาน</button>
+                    <button id="completeTaskBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-sm btn hidden">ปิดงาน</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        let config = {
+            sheetId: '1q7knxk9LtPOWRpyAJoVdrDWxQMxQgQrgFJRN-H3fpNE',
+            sheetName: 'รายงานการปฏิบัติงาน',
+            scriptUrl: 'https://script.google.com/macros/s/AKfycbz_emwaZiWmr7yGtknJUDEmx-v_-TpliOzTIPgnMMfLt0l1TOxAhwbmCp-l9ehkho7k/exec',
+            updateInterval: 3, // minutes
+            password: 'satta2533'
+        };
+        
+        // Column indices for Google Sheet data
+        // Note: JavaScript arrays are 0-indexed, but Google Sheets columns start from 1 (A=1, B=2, etc.)
+        const COLUMNS = {
+            DATE: 0,          // A - วันที่รับแจ้ง
+            TOPIC: 2,         // C - เรื่องที่รับแจ้ง
+            LOCATION: 3,      // D - สถานที่
+            PHONE: 4,         // E - เบอร์โทรศัพท์
+            DETAILS: 5,       // F - รายละเอียดเพิ่มเติม
+            RESPONSIBLE: 6,   // G - ผู้รับผิดชอบ
+            STATUS: 7,        // H - สถานะ
+            RESULT: 8,        // I - ผลการปฏิบัติงาน/สาเหตุ
+            COMPLETION_DATE: 9, // J - วันที่ดำเนินการซ่อม
+            COMPLETION_TIME: 10, // K - เวลาที่ซ่อมเสร็จ
+            NOTES: 11         // L - หมายเหตุ
+        };
+        
+        // Store data
+        let sheetData = [];
+        let updateTimer;
+        let topicChart = null;
+        let responsibleChart = null;
+        let selectedTaskRow = null;
+        let selectedTaskAction = null;
+        
+        // DOM Elements
+        const dashboardPage = document.getElementById('dashboardPage');
+        const tasksPage = document.getElementById('tasksPage');
+        const navItems = document.querySelectorAll('.nav-item');
+        const taskTabs = document.querySelectorAll('.task-tab');
+        const activeTasksTab = document.getElementById('activeTasksTab');
+        const completedTasksTab = document.getElementById('completedTasksTab');
+        const settingsIcon = document.getElementById('settingsIcon');
+        const settingsModal = document.getElementById('settingsModal');
+        const closeSettingsModal = document.getElementById('closeSettingsModal');
+        const verifyPasswordBtn = document.getElementById('verifyPassword');
+        const saveSettingsBtn = document.getElementById('saveSettings');
+        const settingsPassword = document.getElementById('settingsPassword');
+        const settingsContent = document.getElementById('settingsContent');
+        const sheetIdInput = document.getElementById('sheetId');
+        const sheetNameInput = document.getElementById('sheetName');
+        const scriptUrlInput = document.getElementById('scriptUrl');
+        const updateIntervalInput = document.getElementById('updateInterval');
+        const refreshDashboardBtn = document.getElementById('refreshDashboard');
+        const refreshTasksBtn = document.getElementById('refreshTasks');
+        const dateFilter = document.getElementById('dateFilter');
+        const topicFilter = document.getElementById('topicFilter');
+        const clearFiltersBtn = document.getElementById('clearFilters');
+        const taskActionModal = document.getElementById('taskActionModal');
+        const closeTaskActionModal = document.getElementById('closeTaskActionModal');
+        const taskActionTitle = document.getElementById('taskActionTitle');
+        const taskDetails = document.getElementById('taskDetails');
+        const completeTaskForm = document.getElementById('completeTaskForm');
+        const taskResult = document.getElementById('taskResult');
+        const acceptTaskBtn = document.getElementById('acceptTaskBtn');
+        const completeTaskBtn = document.getElementById('completeTaskBtn');
+        const lastUpdated = document.getElementById('lastUpdated');
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            fetchData();
+            startAutoUpdate();
+            setupEventListeners();
+        });
+        
+        // Load configuration from localStorage
+        function loadConfig() {
+            const savedConfig = localStorage.getItem('maintenanceTrackingConfig');
+            if (savedConfig) {
+                config = JSON.parse(savedConfig);
+            }
+            
+            // Set input values
+            sheetIdInput.value = config.sheetId;
+            sheetNameInput.value = config.sheetName;
+            scriptUrlInput.value = config.scriptUrl;
+            updateIntervalInput.value = config.updateInterval;
+        }
+        
+        // Save configuration to localStorage
+        function saveConfig() {
+            config.sheetId = sheetIdInput.value;
+            config.sheetName = sheetNameInput.value;
+            config.scriptUrl = scriptUrlInput.value;
+            config.updateInterval = parseInt(updateIntervalInput.value) || 3;
+            
+            localStorage.setItem('maintenanceTrackingConfig', JSON.stringify(config));
+            
+            // Restart auto update with new interval
+            clearInterval(updateTimer);
+            startAutoUpdate();
+            
+            // Fetch data with new configuration
+            fetchData();
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Navigation
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+                    
+                    const page = item.dataset.page;
+                    if (page === 'dashboard') {
+                        dashboardPage.classList.remove('hidden');
+                        tasksPage.classList.add('hidden');
+                    } else if (page === 'tasks') {
+                        dashboardPage.classList.add('hidden');
+                        tasksPage.classList.remove('hidden');
+                    }
+                });
+            });
+            
+            // Task tabs
+            taskTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    taskTabs.forEach(t => t.classList.remove('active', 'text-blue-700', 'border-b-2', 'border-blue-500'));
+                    taskTabs.forEach(t => t.classList.add('text-gray-500'));
+                    tab.classList.add('active', 'text-blue-700', 'border-b-2', 'border-blue-500');
+                    
+                    const tabName = tab.dataset.tab;
+                    if (tabName === 'active') {
+                        activeTasksTab.classList.remove('hidden');
+                        completedTasksTab.classList.add('hidden');
+                    } else if (tabName === 'completed') {
+                        activeTasksTab.classList.add('hidden');
+                        completedTasksTab.classList.remove('hidden');
+                    }
+                });
+            });
+            
+            // Settings modal
+            settingsIcon.addEventListener('click', () => {
+                settingsModal.classList.remove('hidden');
+            });
+            
+            closeSettingsModal.addEventListener('click', () => {
+                settingsModal.classList.add('hidden');
+                settingsPassword.value = '';
+                settingsContent.classList.add('hidden');
+                saveSettingsBtn.classList.add('hidden');
+                verifyPasswordBtn.classList.remove('hidden');
+            });
+            
+            verifyPasswordBtn.addEventListener('click', () => {
+                if (settingsPassword.value === config.password) {
+                    settingsContent.classList.remove('hidden');
+                    saveSettingsBtn.classList.remove('hidden');
+                    verifyPasswordBtn.classList.add('hidden');
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'รหัสผ่านไม่ถูกต้อง',
+                        text: 'กรุณาลองใหม่อีกครั้ง',
+                        confirmButtonColor: '#4a86e8'
+                    });
+                }
+            });
+            
+            saveSettingsBtn.addEventListener('click', () => {
+                saveConfig();
+                settingsModal.classList.add('hidden');
+                settingsPassword.value = '';
+                settingsContent.classList.add('hidden');
+                saveSettingsBtn.classList.add('hidden');
+                verifyPasswordBtn.classList.remove('hidden');
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'บันทึกการตั้งค่าเรียบร้อย',
+                    confirmButtonColor: '#4a86e8'
+                });
+            });
+            
+            // Refresh buttons
+            refreshDashboardBtn.addEventListener('click', fetchData);
+            refreshTasksBtn.addEventListener('click', fetchData);
+            
+            // Filters
+            dateFilter.addEventListener('change', applyFilters);
+            topicFilter.addEventListener('change', applyFilters);
+            clearFiltersBtn.addEventListener('click', clearFilters);
+            
+            // Task action modal
+            closeTaskActionModal.addEventListener('click', () => {
+                taskActionModal.classList.add('hidden');
+                selectedTaskRow = null;
+                selectedTaskAction = null;
+            });
+            
+            acceptTaskBtn.addEventListener('click', () => {
+                if (selectedTaskRow !== null && selectedTaskAction === 'accept') {
+                    updateTaskStatus(selectedTaskRow, 'รับงาน/กำลังดำเนินงาน');
+                }
+            });
+            
+            completeTaskBtn.addEventListener('click', () => {
+                if (selectedTaskRow !== null && selectedTaskAction === 'complete') {
+                    const result = taskResult.value.trim();
+                    if (!result) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'กรุณาระบุผลการปฏิบัติงาน',
+                            text: 'จำเป็นต้องระบุผลการปฏิบัติงานหรือสาเหตุก่อนปิดงาน',
+                            confirmButtonColor: '#4a86e8'
+                        });
+                        return;
+                    }
+                    
+                    updateTaskStatus(selectedTaskRow, 'ดำเนินการเสร็จสิ้น', result);
+                }
+            });
+        }
+        
+        // Start auto update timer
+        function startAutoUpdate() {
+            updateTimer = setInterval(fetchData, config.updateInterval * 60 * 1000);
+        }
+        
+        // Format date for display
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            
+            try {
+                // Handle different date formats
+                let date;
+                if (dateString.includes('/')) {
+                    // Format: MM/DD/YYYY
+                    const parts = dateString.split('/');
+                    if (parts.length === 3) {
+                        date = new Date(parts[2], parts[0] - 1, parts[1]);
+                    } else {
+                        return dateString;
+                    }
+                } else {
+                    date = new Date(dateString);
+                }
+                
+                if (isNaN(date.getTime())) return dateString;
+                
+                return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+            } catch (e) {
+                return dateString;
+            }
+        }
+        
+        // Get current date in MM/DD/YYYY format
+        function getCurrentDate() {
+            const now = new Date();
+            return `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
+        }
+        
+        // Get current time in HH:MM:SS format
+        function getCurrentTime() {
+            const now = new Date();
+            return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        }
+        
+        // Fetch data from Google Sheets
+        function fetchData() {
+            Swal.fire({
+                title: 'กำลังโหลดข้อมูล',
+                text: 'กรุณารอสักครู่...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            const url = `${config.scriptUrl}?action=getData&sheetId=${config.sheetId}&sheetName=${config.sheetName}`;
+            
+            // Create a script element for JSONP
+            const script = document.createElement('script');
+            script.src = url;
+            
+            // Define the callback function
+            window.handleJsonpResponse = function(data) {
+                sheetData = data;
+                
+                // Update last updated time
+                const now = new Date();
+                lastUpdated.textContent = `อัพเดตล่าสุด: ${now.toLocaleTimeString()}`;
+                
+                // Process and display data
+                processData();
+                
+                // Remove the script element
+                document.body.removeChild(script);
+                
+                Swal.close();
+            };
+            
+            // Add the script to the document
+            document.body.appendChild(script);
+            
+            // Handle timeout
+            setTimeout(() => {
+                if (document.body.contains(script)) {
+                    document.body.removeChild(script);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ไม่สามารถโหลดข้อมูลได้',
+                        text: 'กรุณาลองใหม่อีกครั้ง',
+                        confirmButtonColor: '#4a86e8'
+                    });
+                }
+            }, 30000);
+        }
+        
+        // Process and display data
+        function processData() {
+            if (!sheetData || !Array.isArray(sheetData)) {
+                console.error('Invalid data format');
+                return;
+            }
+            
+            // Filter out rows with empty required fields
+            const validData = sheetData.filter(row => {
+                return row[COLUMNS.DATE] && row[COLUMNS.TOPIC] && row[COLUMNS.LOCATION] && row[COLUMNS.STATUS]; // Check required columns
+            });
+            
+            // Populate topic filter
+            const topics = [...new Set(validData.map(row => row[COLUMNS.TOPIC]))].filter(Boolean);
+            topicFilter.innerHTML = '<option value="">ทั้งหมด</option>';
+            topics.forEach(topic => {
+                const option = document.createElement('option');
+                option.value = topic;
+                option.textContent = topic;
+                topicFilter.appendChild(option);
+            });
+            
+            // Apply any active filters
+            applyFilters();
+            
+            // Update charts
+            updateCharts(validData);
+        }
+        
+        // Apply filters to data
+        function applyFilters() {
+            if (!sheetData || !Array.isArray(sheetData)) return;
+            
+            // Get filter values
+            const dateValue = dateFilter.value;
+            const topicValue = topicFilter.value;
+            
+            // Filter data
+            let filteredData = sheetData.filter(row => {
+                // Skip rows with empty required fields
+                if (!row[COLUMNS.DATE] || !row[COLUMNS.TOPIC] || !row[COLUMNS.LOCATION] || !row[COLUMNS.STATUS]) return false;
+                
+                // Apply date filter if set
+                if (dateValue) {
+                    const rowDate = new Date(row[COLUMNS.DATE]);
+                    const filterDate = new Date(dateValue);
+                    
+                    if (rowDate.toDateString() !== filterDate.toDateString()) return false;
+                }
+                
+                // Apply topic filter if set
+                if (topicValue && row[COLUMNS.TOPIC] !== topicValue) return false;
+                
+                return true;
+            });
+            
+            // Update dashboard table
+            updateDashboardTable(filteredData);
+            
+            // Update task tables
+            updateTaskTables(filteredData);
+            
+            // Update charts with filtered data
+            updateCharts(filteredData);
+        }
+        
+        // Clear all filters
+        function clearFilters() {
+            dateFilter.value = '';
+            topicFilter.value = '';
+            applyFilters();
+        }
+        
+        // Update dashboard table
+        function updateDashboardTable(data) {
+            const tableBody = document.getElementById('dashboardTableBody');
+            tableBody.innerHTML = '';
+            
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50';
+                
+                // Date
+                const dateCell = document.createElement('td');
+                dateCell.className = 'py-3 px-4';
+                dateCell.textContent = formatDate(row[COLUMNS.DATE]);
+                tr.appendChild(dateCell);
+                
+                // Topic
+                const topicCell = document.createElement('td');
+                topicCell.className = 'py-3 px-4';
+                topicCell.textContent = row[COLUMNS.TOPIC];
+                tr.appendChild(topicCell);
+                
+                // Location
+                const locationCell = document.createElement('td');
+                locationCell.className = 'py-3 px-4';
+                locationCell.textContent = row[COLUMNS.LOCATION];
+                tr.appendChild(locationCell);
+                
+                // Details
+                const detailsCell = document.createElement('td');
+                detailsCell.className = 'py-3 px-4';
+                detailsCell.textContent = row[COLUMNS.DETAILS] || '-';
+                tr.appendChild(detailsCell);
+                
+                // Responsible
+                const responsibleCell = document.createElement('td');
+                responsibleCell.className = 'py-3 px-4';
+                responsibleCell.textContent = row[COLUMNS.RESPONSIBLE] || '-';
+                tr.appendChild(responsibleCell);
+                
+                // Status
+                const statusCell = document.createElement('td');
+                statusCell.className = 'py-3 px-4';
+                
+                const statusBadge = document.createElement('span');
+                statusBadge.className = 'px-2 py-1 rounded-full text-xs font-medium';
+                
+                if (row[COLUMNS.STATUS] === 'มอบหมายงาน') {
+                    statusBadge.className += ' status-assigned';
+                } else if (row[COLUMNS.STATUS] === 'รับงาน/กำลังดำเนินงาน') {
+                    statusBadge.className += ' status-inprogress';
+                } else if (row[COLUMNS.STATUS] === 'ดำเนินการเสร็จสิ้น') {
+                    statusBadge.className += ' status-completed';
+                }
+                
+                statusBadge.textContent = row[COLUMNS.STATUS];
+                statusCell.appendChild(statusBadge);
+                tr.appendChild(statusCell);
+                
+                // Result
+                const resultCell = document.createElement('td');
+                resultCell.className = 'py-3 px-4';
+                resultCell.textContent = row[COLUMNS.RESULT] || '-';
+                tr.appendChild(resultCell);
+                
+                // Completion Date
+                const completionDateCell = document.createElement('td');
+                completionDateCell.className = 'py-3 px-4';
+                completionDateCell.textContent = row[COLUMNS.COMPLETION_DATE] ? formatDate(row[COLUMNS.COMPLETION_DATE]) : '-';
+                tr.appendChild(completionDateCell);
+                
+                // Notes
+                const notesCell = document.createElement('td');
+                notesCell.className = 'py-3 px-4';
+                notesCell.textContent = row[COLUMNS.NOTES] || '-';
+                tr.appendChild(notesCell);
+                
+                tableBody.appendChild(tr);
+            });
+        }
+        
+        // Update task tables
+        function updateTaskTables(data) {
+            const activeTasksTableBody = document.getElementById('activeTasksTableBody');
+            const completedTasksTableBody = document.getElementById('completedTasksTableBody');
+            
+            activeTasksTableBody.innerHTML = '';
+            completedTasksTableBody.innerHTML = '';
+            
+            data.forEach((row, index) => {
+                if (row[COLUMNS.STATUS] === 'ดำเนินการเสร็จสิ้น') {
+                    // Completed tasks
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-gray-50';
+                    
+                    // Date
+                    const dateCell = document.createElement('td');
+                    dateCell.className = 'py-3 px-4';
+                    dateCell.textContent = formatDate(row[COLUMNS.DATE]);
+                    tr.appendChild(dateCell);
+                    
+                    // Topic
+                    const topicCell = document.createElement('td');
+                    topicCell.className = 'py-3 px-4';
+                    topicCell.textContent = row[COLUMNS.TOPIC];
+                    tr.appendChild(topicCell);
+                    
+                    // Location
+                    const locationCell = document.createElement('td');
+                    locationCell.className = 'py-3 px-4';
+                    locationCell.textContent = row[COLUMNS.LOCATION];
+                    tr.appendChild(locationCell);
+                    
+                    // Phone
+                    const phoneCell = document.createElement('td');
+                    phoneCell.className = 'py-3 px-4';
+                    phoneCell.textContent = row[COLUMNS.PHONE] || '-';
+                    tr.appendChild(phoneCell);
+                    
+                    // Details
+                    const detailsCell = document.createElement('td');
+                    detailsCell.className = 'py-3 px-4';
+                    detailsCell.textContent = row[COLUMNS.DETAILS] || '-';
+                    tr.appendChild(detailsCell);
+                    
+                    // Responsible
+                    const responsibleCell = document.createElement('td');
+                    responsibleCell.className = 'py-3 px-4';
+                    responsibleCell.textContent = row[COLUMNS.RESPONSIBLE] || '-';
+                    tr.appendChild(responsibleCell);
+                    
+                    // Result
+                    const resultCell = document.createElement('td');
+                    resultCell.className = 'py-3 px-4';
+                    resultCell.textContent = row[COLUMNS.RESULT] || '-';
+                    tr.appendChild(resultCell);
+                    
+                    // Completion Date
+                    const completionDateCell = document.createElement('td');
+                    completionDateCell.className = 'py-3 px-4';
+                    completionDateCell.textContent = row[COLUMNS.COMPLETION_DATE] ? formatDate(row[COLUMNS.COMPLETION_DATE]) : '-';
+                    tr.appendChild(completionDateCell);
+                    
+                    completedTasksTableBody.appendChild(tr);
+                } else {
+                    // Active tasks
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-gray-50';
+                    tr.dataset.rowIndex = index;
+                    
+                    // Date
+                    const dateCell = document.createElement('td');
+                    dateCell.className = 'py-3 px-4';
+                    dateCell.textContent = formatDate(row[COLUMNS.DATE]);
+                    tr.appendChild(dateCell);
+                    
+                    // Topic
+                    const topicCell = document.createElement('td');
+                    topicCell.className = 'py-3 px-4';
+                    topicCell.textContent = row[COLUMNS.TOPIC];
+                    tr.appendChild(topicCell);
+                    
+                    // Location
+                    const locationCell = document.createElement('td');
+                    locationCell.className = 'py-3 px-4';
+                    locationCell.textContent = row[COLUMNS.LOCATION];
+                    tr.appendChild(locationCell);
+                    
+                    // Phone
+                    const phoneCell = document.createElement('td');
+                    phoneCell.className = 'py-3 px-4';
+                    phoneCell.textContent = row[COLUMNS.PHONE] || '-';
+                    tr.appendChild(phoneCell);
+                    
+                    // Details
+                    const detailsCell = document.createElement('td');
+                    detailsCell.className = 'py-3 px-4';
+                    detailsCell.textContent = row[COLUMNS.DETAILS] || '-';
+                    tr.appendChild(detailsCell);
+                    
+                    // Responsible
+                    const responsibleCell = document.createElement('td');
+                    responsibleCell.className = 'py-3 px-4';
+                    responsibleCell.textContent = row[COLUMNS.RESPONSIBLE] || '-';
+                    tr.appendChild(responsibleCell);
+                    
+                    // Status
+                    const statusCell = document.createElement('td');
+                    statusCell.className = 'py-3 px-4';
+                    
+                    const statusBadge = document.createElement('span');
+                    statusBadge.className = 'px-2 py-1 rounded-full text-xs font-medium';
+                    
+                    if (row[COLUMNS.STATUS] === 'มอบหมายงาน') {
+                        statusBadge.className += ' status-assigned';
+                    } else if (row[COLUMNS.STATUS] === 'รับงาน/กำลังดำเนินงาน') {
+                        statusBadge.className += ' status-inprogress';
+                    }
+                    
+                    statusBadge.textContent = row[COLUMNS.STATUS];
+                    statusCell.appendChild(statusBadge);
+                    tr.appendChild(statusCell);
+                    
+                    // Actions
+                    const actionsCell = document.createElement('td');
+                    actionsCell.className = 'py-3 px-4';
+                    
+                    if (row[COLUMNS.STATUS] === 'มอบหมายงาน') {
+                        const acceptBtn = document.createElement('button');
+                        acceptBtn.className = 'bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg text-sm mr-2';
+                        acceptBtn.textContent = 'รับงาน';
+                        acceptBtn.addEventListener('click', () => showTaskActionModal(index, 'accept', row));
+                        actionsCell.appendChild(acceptBtn);
+                    } else if (row[COLUMNS.STATUS] === 'รับงาน/กำลังดำเนินงาน') {
+                        const completeBtn = document.createElement('button');
+                        completeBtn.className = 'bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-sm';
+                        completeBtn.textContent = 'ปิดงาน';
+                        completeBtn.addEventListener('click', () => showTaskActionModal(index, 'complete', row));
+                        actionsCell.appendChild(completeBtn);
+                    }
+                    
+                    tr.appendChild(actionsCell);
+                    
+                    activeTasksTableBody.appendChild(tr);
+                }
+            });
+        }
+        
+        // Show task action modal
+        function showTaskActionModal(rowIndex, action, rowData) {
+            selectedTaskRow = rowIndex;
+            selectedTaskAction = action;
+            
+            // Set modal title
+            if (action === 'accept') {
+                taskActionTitle.textContent = 'รับงาน';
+                acceptTaskBtn.classList.remove('hidden');
+                completeTaskBtn.classList.add('hidden');
+                completeTaskForm.classList.add('hidden');
+            } else if (action === 'complete') {
+                taskActionTitle.textContent = 'ปิดงาน';
+                acceptTaskBtn.classList.add('hidden');
+                completeTaskBtn.classList.remove('hidden');
+                completeTaskForm.classList.remove('hidden');
+                taskResult.value = '';
+            }
+            
+            // Set task details
+            taskDetails.innerHTML = `
+                <p class="mb-2"><strong>วันที่รับแจ้ง:</strong> ${formatDate(rowData[COLUMNS.DATE])}</p>
+                <p class="mb-2"><strong>เรื่องที่รับแจ้ง:</strong> ${rowData[COLUMNS.TOPIC]}</p>
+                <p class="mb-2"><strong>สถานที่:</strong> ${rowData[COLUMNS.LOCATION]}</p>
+                <p class="mb-2"><strong>เบอร์โทรศัพท์:</strong> ${rowData[COLUMNS.PHONE] || '-'}</p>
+                <p class="mb-2"><strong>รายละเอียด:</strong> ${rowData[COLUMNS.DETAILS] || '-'}</p>
+                <p class="mb-0"><strong>ผู้รับผิดชอบ:</strong> ${rowData[COLUMNS.RESPONSIBLE] || '-'}</p>
+            `;
+            
+            // Show modal
+            taskActionModal.classList.remove('hidden');
+        }
+        
+        // Update task status
+        function updateTaskStatus(rowIndex, status, result = '') {
+            Swal.fire({
+                title: 'กำลังบันทึกข้อมูล',
+                text: 'กรุณารอสักครู่...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            const row = sheetData[rowIndex];
+            const rowNumber = rowIndex + 2; // +2 because Google Sheets is 1-indexed and we have a header row
+            
+            // Prepare data for update
+            const updateData = {
+                action: 'updateData',
+                sheetId: config.sheetId,
+                sheetName: config.sheetName,
+                rowNumber: rowNumber,
+                status: status,
+                result: result,
+                completionDate: status === 'ดำเนินการเสร็จสิ้น' ? getCurrentDate() : '',
+                completionTime: status === 'ดำเนินการเสร็จสิ้น' ? getCurrentTime() : ''
+            };
+            
+            // Create a script element for JSONP
+            const script = document.createElement('script');
+            script.src = `${config.scriptUrl}?${new URLSearchParams(updateData).toString()}`;
+            
+            // Define the callback function
+            window.handleJsonpResponse = function(response) {
+                // Remove the script element
+                document.body.removeChild(script);
+                
+                if (response.success) {
+                    // Update local data
+                    row[COLUMNS.STATUS] = status;
+                    if (result) row[COLUMNS.RESULT] = result;
+                    if (status === 'ดำเนินการเสร็จสิ้น') {
+                        row[COLUMNS.COMPLETION_DATE] = getCurrentDate();
+                        row[COLUMNS.COMPLETION_TIME] = getCurrentTime();
+                    }
+                    
+                    // Close modal
+                    taskActionModal.classList.add('hidden');
+                    selectedTaskRow = null;
+                    selectedTaskAction = null;
+                    
+                    // Refresh data display
+                    processData();
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'บันทึกข้อมูลเรียบร้อย',
+                        confirmButtonColor: '#4a86e8'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ไม่สามารถบันทึกข้อมูลได้',
+                        text: response.message || 'กรุณาลองใหม่อีกครั้ง',
+                        confirmButtonColor: '#4a86e8'
+                    });
+                }
+            };
+            
+            // Add the script to the document
+            document.body.appendChild(script);
+            
+            // Handle timeout
+            setTimeout(() => {
+                if (document.body.contains(script)) {
+                    document.body.removeChild(script);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ไม่สามารถบันทึกข้อมูลได้',
+                        text: 'การเชื่อมต่อหมดเวลา กรุณาลองใหม่อีกครั้ง',
+                        confirmButtonColor: '#4a86e8'
+                    });
+                }
+            }, 30000);
+        }
+        
+        // Update charts
+        function updateCharts(data) {
+            // Topic chart (pie chart)
+            updateTopicChart(data);
+            
+            // Responsible chart (horizontal bar chart)
+            updateResponsibleChart(data);
+        }
+        
+        // Update topic chart
+        function updateTopicChart(data) {
+            const ctx = document.getElementById('topicChart').getContext('2d');
+            
+            // Count topics
+            const topicCounts = {};
+            data.forEach(row => {
+                const topic = row[COLUMNS.TOPIC];
+                if (topic) {
+                    topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+                }
+            });
+            
+            // Prepare chart data
+            const labels = Object.keys(topicCounts);
+            const counts = Object.values(topicCounts);
+            const total = counts.reduce((sum, count) => sum + count, 0);
+            
+            // Calculate percentages
+            const percentages = counts.map(count => ((count / total) * 100).toFixed(1));
+            
+            // Generate labels with counts and percentages
+            const labelsWithData = labels.map((label, index) => 
+                `${label} (${counts[index]}, ${percentages[index]}%)`
+            );
+            
+            // Generate colors
+            const colors = generateColors(labels.length);
+            
+            // Destroy previous chart if exists
+            if (topicChart) {
+                topicChart.destroy();
+            }
+            
+            // Create new chart
+            topicChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labelsWithData,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: colors,
+                        borderColor: colors.map(color => color.replace('0.7', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 15,
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label.split(' (')[0]}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update responsible chart - now as horizontal bar chart
+        function updateResponsibleChart(data) {
+            const ctx = document.getElementById('responsibleChart').getContext('2d');
+            
+            // Count tasks by responsible person and status
+            const responsibleData = {};
+            data.forEach(row => {
+                const responsible = row[COLUMNS.RESPONSIBLE] || 'ไม่ระบุ';
+                const status = row[COLUMNS.STATUS];
+                
+                if (!responsibleData[responsible]) {
+                    responsibleData[responsible] = {
+                        'มอบหมายงาน': 0,
+                        'รับงาน/กำลังดำเนินงาน': 0,
+                        'ดำเนินการเสร็จสิ้น': 0
+                    };
+                }
+                
+                if (status) {
+                    responsibleData[responsible][status]++;
+                }
+            });
+            
+            // Prepare chart data
+            const labels = Object.keys(responsibleData);
+            const assignedData = labels.map(label => responsibleData[label]['มอบหมายงาน']);
+            const inProgressData = labels.map(label => responsibleData[label]['รับงาน/กำลังดำเนินงาน']);
+            const completedData = labels.map(label => responsibleData[label]['ดำเนินการเสร็จสิ้น']);
+            
+            // Calculate totals for each responsible person
+            const totals = labels.map((label, index) => 
+                assignedData[index] + inProgressData[index] + completedData[index]
+            );
+            
+            // Generate labels with totals
+            const labelsWithTotals = labels.map((label, index) => 
+                `${label} (${totals[index]})`
+            );
+            
+            // Destroy previous chart if exists
+            if (responsibleChart) {
+                responsibleChart.destroy();
+            }
+            
+            // Create new chart - horizontal bar chart
+            responsibleChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labelsWithTotals,
+                    datasets: [
+                        {
+                            label: 'มอบหมายงาน',
+                            data: assignedData,
+                            backgroundColor: 'rgba(255, 205, 86, 0.7)',
+                            borderColor: 'rgb(255, 205, 86)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'รับงาน/กำลังดำเนินงาน',
+                            data: inProgressData,
+                            backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                            borderColor: 'rgb(255, 99, 132)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'ดำเนินการเสร็จสิ้น',
+                            data: completedData,
+                            backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                            borderColor: 'rgb(75, 192, 192)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y', // This makes the bars horizontal
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        },
+                        y: {
+                            stacked: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.raw || 0;
+                                    const datasetIndex = context.datasetIndex;
+                                    const index = context.dataIndex;
+                                    const total = totals[index];
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Generate colors for charts
+        function generateColors(count) {
+            const baseColors = [
+                'rgba(75, 192, 192, 0.7)',  // Teal
+                'rgba(54, 162, 235, 0.7)',  // Blue
+                'rgba(153, 102, 255, 0.7)', // Purple
+                'rgba(255, 159, 64, 0.7)',  // Orange
+                'rgba(255, 99, 132, 0.7)',  // Red
+                'rgba(255, 205, 86, 0.7)',  // Yellow
+                'rgba(201, 203, 207, 0.7)', // Grey
+                'rgba(100, 221, 23, 0.7)',  // Green
+                'rgba(255, 99, 255, 0.7)',  // Pink
+                'rgba(139, 69, 19, 0.7)'    // Brown
+            ];
+            
+            const colors = [];
+            for (let i = 0; i < count; i++) {
+                colors.push(baseColors[i % baseColors.length]);
+            }
+            
+            return colors;
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'95bbd603f6b6895a',t:'MTc1MTkzODQzMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
